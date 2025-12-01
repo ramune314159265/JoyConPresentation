@@ -27,6 +27,7 @@ class Program
         joycon.Start();
         await joycon.SetInputReportModeAsync(JoyCon.InputReportType.Full);
         await joycon.EnableRumbleAsync(true);
+        await joycon.SetPlayerLedsAsync(JoyCon.LedState.On, JoyCon.LedState.Off, JoyCon.LedState.Off, JoyCon.LedState.Off);
         DeviceInfo deviceInfo = await joycon.GetDeviceInfoAsync();
         Console.WriteLine($"コントローラー {deviceInfo.ControllerType} ({deviceInfo.FirmwareVersionMajor}.{deviceInfo.FirmwareVersionMinor})");
         joycon.ReportReceived += ReportHandle;
