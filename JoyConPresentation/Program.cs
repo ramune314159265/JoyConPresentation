@@ -26,9 +26,9 @@ class Program
         Console.WriteLine("JoyConを開始しています");
         joycon.Start();
         await joycon.SetInputReportModeAsync(JoyCon.InputReportType.Full);
+        await joycon.EnableRumbleAsync(true);
         DeviceInfo deviceInfo = await joycon.GetDeviceInfoAsync();
         Console.WriteLine($"コントローラー {deviceInfo.ControllerType} ({deviceInfo.FirmwareVersionMajor}.{deviceInfo.FirmwareVersionMinor})");
-
         joycon.ReportReceived += ReportHandle;
         await Task.Delay(-1);
     }
@@ -43,13 +43,22 @@ class Program
         if (j.Buttons.A && !previousState.A)
         {
             inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RIGHT);
+            RumbleFeedback(sender);
         }
         if (j.Buttons.Y && !previousState.Y)
         {
             inputSimulator.Keyboard.KeyPress(VirtualKeyCode.LEFT);
+            RumbleFeedback(sender);
         }
         previousState = j.Buttons;
         return Task.CompletedTask;
+    }
+
+    static async void RumbleFeedback(JoyCon joycon)
+    {
+        await joycon.WriteRumble(new RumbleSet(0, 0, 300, 0.3));
+        await Task.Delay(50);
+        await joycon.WriteRumble(new RumbleSet(0, 0, 0, 0));
     }
 
     static HidDevice? GetDevice()
