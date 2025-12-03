@@ -20,8 +20,7 @@ class Program
     static double px = 0;
     static double py = 0;
     static CalibrationData? calibration;
-    static Quaternion _offsetQuaternion = Quaternion.Identity;
-    static readonly float deg2Rad = (float)(Math.PI / 180.0);
+    static StickParametersSet? sticksParameters;
 
     static async Task Main()
     {
@@ -51,6 +50,7 @@ class Program
         CalibrationData facCal = await joycon.GetFactoryCalibrationAsync();
         CalibrationData userCal = await joycon.GetUserCalibrationAsync();
         calibration = facCal + userCal;
+        sticksParameters = await joycon.GetStickParametersAsync();
         DeviceInfo deviceInfo = await joycon.GetDeviceInfoAsync();
         Console.WriteLine($"コントローラー {deviceInfo.ControllerType} ({deviceInfo.FirmwareVersionMajor}.{deviceInfo.FirmwareVersionMinor})");
         joycon.ReportReceived += ReportHandle;
@@ -76,33 +76,23 @@ class Program
         }
         if (j.Buttons.ZR)
         {
-            var imuFrame = j.Imu.Frames[1];
-            var calibrated = imuFrame.GetCalibrated(calibration.ImuCalibration!);
-
-            float gxRad = (float)(calibrated.GyroX * deg2Rad);
-            float gyRad = (float)(calibrated.GyroY * deg2Rad);
-            float gzRad = (float)(calibrated.GyroZ * deg2Rad);
-
-            filter.Update(-gxRad, gzRad, -gyRad, (float)-calibrated.AccelX, (float)calibrated.AccelZ, (float)-calibrated.AccelY);
-            float[] q = filter.Quaternion;
-            var currentQuaternion = new Quaternion(q[1], q[2], q[3], q[0]);
-
             if (!previousState.ZR)
             {
                 pointer.SetVisible(true);
-                _offsetQuaternion = Quaternion.Inverse(currentQuaternion);
+                px = Screen.PrimaryScreen.Bounds.Width / 2;
+                py = Screen.PrimaryScreen.Bounds.Height / 2;
                 RumbleFeedback(sender);
             }
-            var finalQuaternion = Quaternion.Multiply(currentQuaternion, _offsetQuaternion);
 
-            var baseVector = new Vector3(0, 0, 1);
+            StickPositionCalibrated rightStickCalibrated = j.RightStick.GetCalibrated(calibration.RightStickCalibration!, sticksParameters.RightStickParameters.DeadZone);
 
-            var rotatedVector = Vector3.Transform(baseVector, finalQuaternion);
+            px += rightStickCalibrated.X * 15;
+            py += -rightStickCalibrated.Y * 15;
 
-            float screenX = (Screen.PrimaryScreen.Bounds.Width / 2) + (rotatedVector.X * 1000f);
-            float screenY = (Screen.PrimaryScreen.Bounds.Height / 2) - (rotatedVector.Y * 1000f);
+            px = Math.Clamp(0, px, Screen.PrimaryScreen.Bounds.Width);
+            py = Math.Clamp(0, py, Screen.PrimaryScreen.Bounds.Height);
 
-            pointer.MovePoint((int)screenX, (int)screenY);
+            pointer.MovePoint((int)px, (int)py);
         }
         if (!j.Buttons.ZR && previousState.ZR)
         {
