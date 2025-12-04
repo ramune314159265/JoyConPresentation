@@ -23,6 +23,7 @@ namespace JoyConPresentation
             SetWindowLong(this.Handle, -20, initialStyle | 0x80000 | 0x20);
 
             this.StartPosition = FormStartPosition.Manual;
+            this.Location = Program.targetScreen.Bounds.Location;
         }
 
         protected override void OnPaint(PaintEventArgs e)

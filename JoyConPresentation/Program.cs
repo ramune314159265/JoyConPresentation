@@ -21,6 +21,7 @@ class Program
     static double py = 0;
     static CalibrationData? calibration;
     static StickParametersSet? sticksParameters;
+    static public Screen targetScreen = Screen.AllScreens.Last();
 
     static async Task Main()
     {
@@ -79,8 +80,8 @@ class Program
             if (!previousState.ZR)
             {
                 pointer.SetVisible(true);
-                px = Screen.PrimaryScreen.Bounds.Width / 2;
-                py = Screen.PrimaryScreen.Bounds.Height / 2;
+                px = targetScreen.Bounds.Width / 2;
+                py = targetScreen.Bounds.Height / 2;
                 RumbleFeedback(sender);
             }
 
@@ -89,8 +90,8 @@ class Program
             px += rightStickCalibrated.X * 15;
             py += -rightStickCalibrated.Y * 15;
 
-            px = Math.Clamp(0, px, Screen.PrimaryScreen.Bounds.Width);
-            py = Math.Clamp(0, py, Screen.PrimaryScreen.Bounds.Height);
+            px = Math.Clamp(0, px, targetScreen.Bounds.Width);
+            py = Math.Clamp(0, py, targetScreen.Bounds.Height);
 
             pointer.MovePoint((int)px, (int)py);
         }
