@@ -78,8 +78,8 @@ class Program
             px += rightStickCalibrated.X * 15;
             py += -rightStickCalibrated.Y * 15;
 
-            px = Math.Clamp(0, px, targetScreen.Bounds.Width);
-            py = Math.Clamp(0, py, targetScreen.Bounds.Height);
+            px = Math.Clamp(px, 0, targetScreen.Bounds.Width);
+            py = Math.Clamp(py, 0, targetScreen.Bounds.Height);
 
             JoyConPresentation.Cursor.Move(Screen.AllScreens.Length - 1, (int)px, (int)py);
         }
