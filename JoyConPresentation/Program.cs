@@ -1,7 +1,6 @@
 ﻿using AHRS;
 using HidSharp;
-using JoyConPresentation;
-using System.Numerics;
+using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
 using wtf.cluster.JoyCon;
@@ -16,7 +15,6 @@ class Program
     static ButtonsFull? previousState = null;
     static InputSimulator inputSimulator = new();
     static MadgwickAHRS filter = new(0.015f, 0.1f);
-    static Pointer? pointer;
     static double px = 0;
     static double py = 0;
     static CalibrationData? calibration;
@@ -25,15 +23,6 @@ class Program
 
     static async Task Main()
     {
-        Thread pointerThread = new(() =>
-        {
-            Application.EnableVisualStyles();
-            pointer = new Pointer();
-            Application.Run(pointer);
-            pointer.SetVisible(false);
-        });
-        pointerThread.SetApartmentState(ApartmentState.STA);
-        pointerThread.Start();
         HidDevice? device = GetDevice();
         if (device == null)
         {
@@ -79,7 +68,6 @@ class Program
         {
             if (!previousState.ZR)
             {
-                pointer.SetVisible(true);
                 px = targetScreen.Bounds.Width / 2;
                 py = targetScreen.Bounds.Height / 2;
                 RumbleFeedback(sender);
@@ -93,11 +81,7 @@ class Program
             px = Math.Clamp(0, px, targetScreen.Bounds.Width);
             py = Math.Clamp(0, py, targetScreen.Bounds.Height);
 
-            pointer.MovePoint((int)px, (int)py);
-        }
-        if (!j.Buttons.ZR && previousState.ZR)
-        {
-            pointer.SetVisible(false);
+            JoyConPresentation.Cursor.Move(Screen.AllScreens.Length - 1, (int)px, (int)py);
         }
         previousState = j.Buttons;
         return Task.CompletedTask;
