@@ -1,8 +1,8 @@
 ﻿using AHRS;
 using HidSharp;
+using JoyConPresentation;
 using System.Windows.Forms;
 using WindowsInput;
-using WindowsInput.Native;
 using wtf.cluster.JoyCon;
 using wtf.cluster.JoyCon.Calibration;
 using wtf.cluster.JoyCon.ExtraData;
@@ -23,6 +23,12 @@ class Program
 
     static async Task Main()
     {
+        var slideshowWindow = PowerPoint.GetSlideShowWindow();
+        if (slideshowWindow is not null)
+        {
+            slideshowWindow.View.Next();
+            slideshowWindow.View.LaserPointerEnabled = true;
+        }
         HidDevice? device = GetDevice();
         if (device == null)
         {
@@ -56,12 +62,22 @@ class Program
         previousState ??= j.Buttons;
         if (j.Buttons.A && !previousState.A)
         {
-            inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RIGHT);
+            var slideshowWindow = PowerPoint.GetSlideShowWindow();
+            if (slideshowWindow is null)
+            {
+                return Task.CompletedTask;
+            }
+            slideshowWindow.View.Next();
             RumbleFeedback(sender);
         }
         if (j.Buttons.Y && !previousState.Y)
         {
-            inputSimulator.Keyboard.KeyPress(VirtualKeyCode.LEFT);
+            var slideshowWindow = PowerPoint.GetSlideShowWindow();
+            if (slideshowWindow is null)
+            {
+                return Task.CompletedTask;
+            }
+            slideshowWindow.View.Next();
             RumbleFeedback(sender);
         }
         if (j.Buttons.ZR)
@@ -70,6 +86,11 @@ class Program
             {
                 px = targetScreen.Bounds.Width / 2;
                 py = targetScreen.Bounds.Height / 2;
+                var slideshowWindow = PowerPoint.GetSlideShowWindow();
+                if (slideshowWindow is not null)
+                {
+                    slideshowWindow.View.LaserPointerEnabled = true;
+                }
                 RumbleFeedback(sender);
             }
 
@@ -82,6 +103,14 @@ class Program
             py = Math.Clamp(py, 0, targetScreen.Bounds.Height);
 
             JoyConPresentation.Cursor.Move(Screen.AllScreens.Length - 1, (int)px, (int)py);
+        }
+        if(!j.Buttons.ZR && previousState.ZR)
+        {
+            var slideshowWindow = PowerPoint.GetSlideShowWindow();
+            if (slideshowWindow is not null)
+            {
+                slideshowWindow.View.LaserPointerEnabled = false;
+            }
         }
         previousState = j.Buttons;
         return Task.CompletedTask;
