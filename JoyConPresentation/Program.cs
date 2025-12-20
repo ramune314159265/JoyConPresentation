@@ -23,12 +23,6 @@ class Program
 
     static async Task Main()
     {
-        var slideshowWindow = PowerPoint.GetSlideShowWindow();
-        if (slideshowWindow is not null)
-        {
-            slideshowWindow.View.Next();
-            slideshowWindow.View.LaserPointerEnabled = true;
-        }
         HidDevice? device = GetDevice();
         if (device == null)
         {
@@ -110,6 +104,7 @@ class Program
             if (slideshowWindow is not null)
             {
                 slideshowWindow.View.LaserPointerEnabled = false;
+                slideshowWindow.View.PointerType = Microsoft.Office.Interop.PowerPoint.PpSlideShowPointerType.ppSlideShowPointerNone;
             }
         }
         previousState = j.Buttons;
