@@ -26,7 +26,6 @@
 
   <ItemGroup>
 	<FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
-    <PackageReference Include="InputSimulator" Version="1.0.4" />
     <PackageReference Include="JoyCon.NET" Version="1.0.1" />
   </ItemGroup>
 	

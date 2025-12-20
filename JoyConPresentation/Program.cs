@@ -1,8 +1,6 @@
-﻿using AHRS;
-using HidSharp;
+﻿using HidSharp;
 using JoyConPresentation;
 using System.Windows.Forms;
-using WindowsInput;
 using wtf.cluster.JoyCon;
 using wtf.cluster.JoyCon.Calibration;
 using wtf.cluster.JoyCon.ExtraData;
@@ -12,14 +10,14 @@ using wtf.cluster.JoyCon.Rumble;
 
 class Program
 {
-    static ButtonsFull? previousState = null;
-    static InputSimulator inputSimulator = new();
-    static MadgwickAHRS filter = new(0.015f, 0.1f);
-    static double px = 0;
-    static double py = 0;
-    static CalibrationData? calibration;
-    static StickParametersSet? sticksParameters;
     static public Screen targetScreen = Screen.AllScreens.Last();
+    static float sensitivityX = 35.0f;
+    static float sensitivityY = 35.0f;
+    static JoyCon? joycon;
+    static ButtonsFull? previousState = null;
+    static CalibrationData? calibration;
+    static int currentMouseX;
+    static int currentMouseY;
 
     static async Task Main()
     {
@@ -30,17 +28,15 @@ class Program
             return;
         }
 
-        var joycon = new JoyCon(device);
+        joycon = new JoyCon(device);
         Console.WriteLine("JoyConを開始しています");
         joycon.Start();
         await joycon.SetInputReportModeAsync(JoyCon.InputReportType.Full);
         await joycon.EnableRumbleAsync(true);
-        await joycon.EnableImuAsync(true);
         await joycon.SetPlayerLedsAsync(JoyCon.LedState.On, JoyCon.LedState.Off, JoyCon.LedState.Off, JoyCon.LedState.Off);
         CalibrationData facCal = await joycon.GetFactoryCalibrationAsync();
         CalibrationData userCal = await joycon.GetUserCalibrationAsync();
         calibration = facCal + userCal;
-        sticksParameters = await joycon.GetStickParametersAsync();
         DeviceInfo deviceInfo = await joycon.GetDeviceInfoAsync();
         Console.WriteLine($"コントローラー {deviceInfo.ControllerType} ({deviceInfo.FirmwareVersionMajor}.{deviceInfo.FirmwareVersionMinor})");
         joycon.ReportReceived += ReportHandle;
@@ -78,8 +74,9 @@ class Program
         {
             if (!previousState.ZR)
             {
-                px = targetScreen.Bounds.Width / 2;
-                py = targetScreen.Bounds.Height / 2;
+                joycon.EnableImuAsync(true);
+                currentMouseX = targetScreen.Bounds.Width / 2;
+                currentMouseY = targetScreen.Bounds.Height / 2;
                 var slideshowWindow = PowerPoint.GetSlideShowWindow();
                 if (slideshowWindow is not null)
                 {
@@ -87,16 +84,19 @@ class Program
                 }
                 RumbleFeedback(sender);
             }
+            var imuFrame = j.Imu.Frames[1];
+            var calibrated = imuFrame.GetCalibrated(calibration.ImuCalibration!);
 
-            StickPositionCalibrated rightStickCalibrated = j.RightStick.GetCalibrated(calibration.RightStickCalibration!, sticksParameters.RightStickParameters.DeadZone);
+            float deltaX = (float)calibrated.GyroZ * sensitivityX * 0.015f;
+            float deltaY = -(float)calibrated.GyroY * sensitivityY * 0.015f;
 
-            px += rightStickCalibrated.X * 15;
-            py += -rightStickCalibrated.Y * 15;
+            currentMouseX += (int)deltaX;
+            currentMouseY += (int)deltaY;
 
-            px = Math.Clamp(px, 0, targetScreen.Bounds.Width);
-            py = Math.Clamp(py, 0, targetScreen.Bounds.Height);
+            currentMouseX = Math.Clamp(currentMouseX, 0, targetScreen.Bounds.Width);
+            currentMouseY = Math.Clamp(currentMouseY, 0, targetScreen.Bounds.Height);
 
-            JoyConPresentation.Cursor.Move(Screen.AllScreens.Length - 1, (int)px, (int)py);
+            JoyConPresentation.Cursor.Move(Screen.AllScreens.Length - 1, currentMouseX, currentMouseY);
         }
         if(!j.Buttons.ZR && previousState.ZR)
         {
@@ -106,6 +106,7 @@ class Program
                 slideshowWindow.View.LaserPointerEnabled = false;
                 slideshowWindow.View.PointerType = Microsoft.Office.Interop.PowerPoint.PpSlideShowPointerType.ppSlideShowPointerNone;
             }
+            joycon.EnableImuAsync(false);
         }
         previousState = j.Buttons;
         return Task.CompletedTask;
