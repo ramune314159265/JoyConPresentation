@@ -71,7 +71,7 @@ class Program
             {
                 return Task.CompletedTask;
             }
-            slideshowWindow.View.Next();
+            slideshowWindow.View.Previous();
             RumbleFeedback(sender);
         }
         if (j.Buttons.ZR)
