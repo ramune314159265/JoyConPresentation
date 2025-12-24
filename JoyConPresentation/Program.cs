@@ -50,7 +50,7 @@ class Program
             return Task.CompletedTask;
         }
         previousState ??= j.Buttons;
-        if (j.Buttons.A && !previousState.A)
+        if ((j.Buttons.A && !previousState.A) || (j.Buttons.X && !previousState.X))
         {
             var slideshowWindow = PowerPoint.GetSlideShowWindow();
             if (slideshowWindow is null)
@@ -60,7 +60,7 @@ class Program
             slideshowWindow.View.Next();
             RumbleFeedback(sender);
         }
-        if (j.Buttons.Y && !previousState.Y)
+        if ((j.Buttons.Y && !previousState.Y) || (j.Buttons.B && !previousState.B))
         {
             var slideshowWindow = PowerPoint.GetSlideShowWindow();
             if (slideshowWindow is null)
